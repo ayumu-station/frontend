@@ -1,0 +1,228 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "fullTextIndex"]
+  engineType      = "dataproxy"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model User {
+  id             String @id @unique
+  usertag        String @unique
+  username       String
+  biography      String @default("")
+  image          Int    @default(0) @db.TinyInt // 0: no, 1: storage
+  followerCount  Int    @default(0)
+  followingCount Int    @default(0)
+  created        BigInt @default(dbgenerated("(UNIX_TIMESTAMP(NOW(4)) * 1000)"))
+
+  session           Session[]
+  Key               Key[]
+  monus             Monu[]              @relation("monu")
+  buildCode         BuildCode[]
+  likedMonu         likedMonu[]
+  User_MessageGorup User_MessageGroup[]
+  Message           Message[]
+  follower          User_User[]         @relation("follower")
+  following         User_User[]         @relation("following")
+  Mention           Mention[]
+
+  @@index([id])
+}
+
+model Key {
+  id              String  @id @unique
+  hashed_password String?
+  user_id         String
+  primary         Boolean
+  user            User    @relation(references: [id], fields: [user_id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+model Session {
+  id             String @id @unique
+  user_id        String
+  active_expires BigInt
+  idle_expires   BigInt
+  user           User   @relation(references: [id], fields: [user_id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+model Monu {
+  id         String  @id @unique
+  type       Int     @default(0) @db.TinyInt // 0: Default, 1: Quote
+  topId      String?
+  parentId   String?
+  content    String  @db.Text
+  isMedia    Boolean @default(false)
+  likedCount Int     @default(0)
+  userId     String
+  imageCount Int     @default(0) @db.TinyInt
+  created    BigInt  @default(dbgenerated("(UNIX_TIMESTAMP(NOW(4)) * 1000)"))
+
+  parent       Monu?          @relation("ParentChild", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  child        Monu[]         @relation("ParentChild")
+  author       User           @relation("monu", fields: [userId], references: [id])
+  likedMonu    likedMonu[]
+  Mention      Mention[]
+  Monu_Hashtag Monu_Hashtag[]
+  // Trending1    Trending[]     @relation("Trending1")
+  // Trending2    Trending[]     @relation("Trending2")
+
+  @@index([created, id])
+  @@index([topId])
+  @@index([parentId])
+  @@index([userId])
+  @@fulltext([content])
+}
+
+model Mention {
+  monuId  String
+  userId  String
+  created BigInt @default(dbgenerated("(UNIX_TIMESTAMP(NOW(4)) * 1000)"))
+
+  monu Monu @relation(fields: [monuId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([monuId, userId])
+  @@index([userId])
+}
+
+model Monu_Hashtag {
+  monuId    String
+  hashtagId String
+
+  monu    Monu    @relation(fields: [monuId], references: [id])
+  hashtag Hashtag @relation(fields: [hashtagId], references: [id])
+
+  @@unique([monuId, hashtagId])
+  @@index([hashtagId])
+}
+
+model Hashtag {
+  id    String @id @unique
+  name  String @unique
+  count Int    @default(0)
+
+  Monu_Hashtag Monu_Hashtag[]
+  // Trending1    Trending[]     @relation("Trending1")
+  // Trending2    Trending[]     @relation("Trending2")
+  // Trending3    Trending[]     @relation("Trending3")
+}
+
+model User_User {
+  fromUserId String
+  toUserId   String
+  isListened Boolean @default(false)
+  created    BigInt  @default(dbgenerated("(UNIX_TIMESTAMP(NOW(4)) * 1000)"))
+
+  from User @relation("following", fields: [fromUserId], references: [id])
+  to   User @relation("follower", fields: [toUserId], references: [id])
+
+  @@unique([fromUserId, toUserId])
+  @@index([toUserId])
+}
+
+model likedMonu {
+  userId  String
+  monuId  String
+  created BigInt @default(dbgenerated("(UNIX_TIMESTAMP(NOW(4)) * 1000)"))
+
+  user User @relation(fields: [userId], references: [id])
+  monu Monu @relation(fields: [monuId], references: [id])
+
+  @@id([userId, monuId])
+  @@index([created])
+  @@index([userId])
+  @@index([monuId])
+}
+
+model UserCanBuild {
+  userId String @id
+}
+
+model BuildCode {
+  id     String  @id @unique @db.VarChar(6)
+  userId String? @unique
+  count  Int?    @default(1)
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model User_MessageGroup {
+  userId         String
+  messageGroupId String
+  created        BigInt @default(dbgenerated("(UNIX_TIMESTAMP(NOW(4)) * 1000)"))
+
+  user         User         @relation(fields: [userId], references: [id])
+  messageGroup MessageGroup @relation(fields: [messageGroupId], references: [id])
+
+  @@unique([userId, messageGroupId])
+  @@index([userId])
+  @@index([messageGroupId])
+}
+
+model MessageGroup {
+  id      String @id @unique
+  image   Int    @default(0) @db.TinyInt
+  title   String
+  created BigInt @default(dbgenerated("(UNIX_TIMESTAMP(NOW(4)) * 1000)"))
+
+  message           Message[]
+  User_MessageGorup User_MessageGroup[]
+}
+
+model Message {
+  id             String @id @unique
+  userId         String
+  content        String
+  messageGroupId String
+  created        BigInt @default(dbgenerated("(UNIX_TIMESTAMP(NOW(4)) * 1000)"))
+  type           Int    @default(0) @db.TinyInt // 0: Message, 1: Joined, 2: Leaved
+
+  user         User         @relation(fields: [userId], references: [id])
+  MessageGroup MessageGroup @relation(fields: [messageGroupId], references: [id])
+
+  @@index([userId])
+  @@index([messageGroupId])
+  @@index([created, id])
+}
+
+// model Trending {
+//   created    Int     @id @default(dbgenerated("(UNIX_TIMESTAMP())"))
+//   monu1Id    String?
+//   monu2Id    String?
+//   hashtag1Id String
+//   hashtag2Id String
+//   hashtag3Id String
+
+//   monu1    Monu?   @relation("Trending1", fields: [monu1Id], references: [id])
+//   monu2    Monu?   @relation("Trending2", fields: [monu2Id], references: [id])
+//   hashtag1 Hashtag @relation("Trending1", fields: [hashtag1Id], references: [id])
+//   hashtag2 Hashtag @relation("Trending2", fields: [hashtag2Id], references: [id])
+//   hashtag3 Hashtag @relation("Trending3", fields: [hashtag3Id], references: [id])
+
+//   @@index([monu1Id])
+//   @@index([monu2Id])
+//   @@index([hashtag1Id])
+//   @@index([hashtag2Id])
+//   @@index([hashtag3Id])
+// }
+
+// model tempTrendingCheck {
+//   id        Int     @id @default(autoincrement())
+//   hit       Int     @default(0)
+//   monuId    String? @unique
+//   hashtagId String? @unique
+// }
