@@ -28,6 +28,6 @@ export const auth = lucia({
 		};
 	},
 	generateCustomUserId: () => nanoid(),
-	...(dev ? {} : { sessionCookie: [{ domain: 'mokastation.space' }] })
+	...(env.ENV === 'dev' ? {} : { sessionCookie: [{ domain: 'mokastation.space' }] })
 });
 export type Auth = typeof auth;
