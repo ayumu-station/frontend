@@ -337,7 +337,7 @@ export const Notification = {
 			conn,
 			sql`
 			SELECT created, type, content, usertag, username, userid, image, monuId
-			FROM Notification
+			FROM notification
 			WHERE targetUserId = ${userId}
 			${cursors ? sql`AND (created, monuId, type) < (${sqls.join(cursors)})` : sqls.empty}
 			ORDER BY created DESC
@@ -352,13 +352,13 @@ export const Notification = {
 			SELECT n.id notificationId, n.created, n.type, ${select.monu}, ${select.likedMonu(userId)}, ${
 				select.mentionHashtag
 			}
-			FROM Notification n
+			FROM notification n
 			JOIN Monu m ON m.id = n.monuId
 			JOIN user u ON u.id = m.userId
 			${join.likedMonu(userId)}
 			WHERE (n.userId IN (SELECT toUserId FROM User_User WHERE fromUserId = ${userId}) OR 
 			((m.userId = ${userId} OR m.id IN (SELECT monuId FROM Mention WHERE userid = ${userId})) AND n.type != 'newMonu'))
-			AND (CASE WHEN ${cursor} IS NULL THEN 1 ELSE (n.created, n.id) < ((SELECT created FROM Notification WHERE id = ${cursor}),  ${cursor}) END)
+			AND (CASE WHEN ${cursor} IS NULL THEN 1 ELSE (n.created, n.id) < ((SELECT created FROM notification WHERE id = ${cursor}),  ${cursor}) END)
 			GROUP BY n.id
 			ORDER BY n.created DESC
 			${pagination(full)}
