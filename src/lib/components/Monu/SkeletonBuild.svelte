@@ -131,7 +131,7 @@
 					<Scrollbars>
 						<div>
 							<svelte:component this={Textarea} bind:data editable={true} />
-							{#if parentMonu}
+							{#if type === 'quote' && parentMonu}
 								<QuoteMonu monu={parentMonu} />
 							{/if}
 						</div>
