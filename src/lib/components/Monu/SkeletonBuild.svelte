@@ -4,7 +4,7 @@
 	import { click } from '$lib/use';
 	import Image from '$lib/components/User/Image.svelte';
 	import SkeletonTextarea from '../Lexical/SkeletonTextarea.svelte';
-	import type { ClientUser } from '@lucia-auth/sveltekit/client/user';
+	import type { ClientUser } from '@lucia-auth/sveltekit/client';
 	export let type: 'default' | 'quote' = 'default';
 	export let parentMonu: Client.Monu | undefined = undefined;
 	export let user: ClientUser;
@@ -43,6 +43,7 @@
 	import QuoteMonu from './QuoteMonu.svelte';
 
 	onMount(async () => {
+		// @ts-ignore
 		await import('jimp/browser/lib/jimp');
 		jimp = (window as any).Jimp;
 	});
