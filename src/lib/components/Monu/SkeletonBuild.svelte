@@ -130,7 +130,7 @@
 				<Image type={user.image} id={user.userid} size={12} seed={user.userid} />
 				<div class="flex flex-col flex-1">
 					<Scrollbars>
-						<div>
+						<div class="h-full p-2">
 							<svelte:component this={Textarea} bind:data editable={true} />
 							{#if type === 'quote' && parentMonu}
 								<QuoteMonu monu={parentMonu} />

@@ -167,7 +167,7 @@
 	});
 </script>
 
-<div class="w-full relative">
+<div class="w-full relative h-full">
 	<div
 		bind:this={editorDiv}
 		role="main"
