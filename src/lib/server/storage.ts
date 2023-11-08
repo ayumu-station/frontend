@@ -8,25 +8,30 @@ import { env } from '$env/dynamic/private';
 import { PNG } from 'pngjs/browser';
 import { Buffer } from 'buffer';
 
-const { S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, ENV } = env;
+const { S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_NAME, S3_API_URL, ENV } = env;
 
 const client = new S3Client({
 	credentials: {
 		accessKeyId: S3_ACCESS_KEY_ID,
 		secretAccessKey: S3_SECRET_ACCESS_KEY
 	},
-	region: 'ap-northeast-2',
+	region: 'auto',
 	...(ENV === 'dev'
 		? {
 				endpoint: {
 					url: new URL('http://localhost'),
 					port: 9000
 				},
-				endpointProvider: (params) => {
+				endpointProvider: () => {
 					return { url: new URL('http://localhost:9000/station') };
 				}
 		  }
-		: {})
+		: {
+				endpoint: S3_API_URL,
+				endpointProvider: () => {
+					return { url: new URL(S3_NAME, S3_API_URL) };
+				}
+		  })
 });
 
 export async function listBuckets() {
@@ -69,7 +74,8 @@ export async function uploadImages(
 	key: string,
 	files: Blob[],
 	width: number | undefined = undefined,
-	height: number | undefined = undefined
+	height: number | undefined = undefined,
+	sizeType: 'limit' | 'same' = 'same'
 ) {
 	let validated = true;
 	const arrs: Uint8Array[] = [];
@@ -86,10 +92,11 @@ export async function uploadImages(
 			const png =
 				width !== undefined || height !== undefined
 					? new PNG().parse(Buffer.from(await file.arrayBuffer()))
-					: { width: undefined, height: undefined };
+					: { width: -1, height: -1 };
 			if (
-				(width === undefined || png.width === width) &&
-				(height === undefined || png.height === height)
+				(width === undefined || (sizeType === 'same' ? png.width === width : png.width <= width)) &&
+				(height === undefined ||
+					(sizeType === 'same' ? png.height === height : png.height <= height))
 			) {
 				validated = true;
 			} else {

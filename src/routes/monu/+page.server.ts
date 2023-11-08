@@ -2,7 +2,6 @@
 import { Monu, User } from '$lib/server/db';
 import { uploadImages } from '$lib/server/storage';
 import { error, redirect, type Actions } from '@sveltejs/kit';
-import { Blob } from 'buffer';
 import type { PageServerLoad } from './$types';
 import { env } from '$env/dynamic/private';
 
@@ -41,17 +40,14 @@ export const actions: Actions = {
 			};
 			if (
 				(type !== undefined && type !== 'default' && type !== 'quote') ||
-				!data.text ||
-				!data.mention ||
-				!data.hashtag ||
+				data.text === undefined ||
 				typeof data.text !== 'string' ||
 				!(data.mention instanceof Array) ||
 				!(data.hashtag instanceof Array) ||
 				!data.mention.every((i) => typeof i === 'string' && data.text.includes(`@${i}`)) ||
 				!data.hashtag.every((i) => typeof i === 'string' && data.text.includes(`#${i}`)) ||
-				!images ||
 				!(images instanceof Array) ||
-				!images.every((image) => image instanceof Blob) ||
+				!images.every((image) => image instanceof File) ||
 				images.length > 4
 			) {
 				throw error(400, {
@@ -72,7 +68,7 @@ export const actions: Actions = {
 					new Set(data.hashtag),
 					images.length
 				);
-				await uploadImages(`monu/${monu.id}`, images as any, 2000, 2000);
+				await uploadImages(`monu/${monu.id}`, images as File[], 2000, 2000, 'limit');
 
 				if (data.hashtag.length > 0)
 					fetch(`https://${VITE_WEBSOCKET_URL}/event/mention`, {
