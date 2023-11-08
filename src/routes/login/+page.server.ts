@@ -21,7 +21,7 @@ export const actions: Actions = {
 			const key = (await auth.validateKeyPassword('usertag', usertag, password)) as unknown as Key;
 			const session = await auth.createSession(key.userId);
 			locals.setSession(session);
-		} catch {
+		} catch (e) {
 			// invalid credentials
 			return fail(400);
 		}

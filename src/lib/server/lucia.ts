@@ -8,7 +8,11 @@ import { env } from '$env/dynamic/private';
 
 const db = new Kysely<KyselyLuciaDatabase>({
 	dialect: new PlanetScaleDialect({
-		url: env.DATABASE_URL
+		url: env.DATABASE_URL,
+		fetch: (url, init) => {
+			delete (init as any)['cache'];
+			return fetch(url, init);
+		}
 	})
 });
 

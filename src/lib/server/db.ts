@@ -11,6 +11,10 @@ const conn = connect({
 			return value === '0' ? false : true;
 		}
 		return cast(field, value);
+	},
+	fetch: (url, init) => {
+		delete (init as any)['cache'];
+		return fetch(url, init);
 	}
 });
 
